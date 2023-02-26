@@ -56,31 +56,29 @@ def insertEvent(addEvent, plCalendarId):
 
     creds = Credentials.from_authorized_user_file('token.json', ['https://www.googleapis.com/auth/calendar'])
     service = build('calendar', 'v3', credentials=creds)
-    status = 2
+    status = 1
+    titlesList = []
 
-    eventList = service.events().list(calendarId=plCalendarId).execute()["items"]
-    eventToDeleteId = ""
+    eventsInCalendar = service.events().list(calendarId=plCalendarId).execute()["items"]
+    for event in eventsInCalendar:
+        titlesList.append(event["summary"])
 
-    for event in eventList:
-        if (event["summary"] == addEvent["summary"]):
-            if (event["end"] == addEvent["end"]):
-                status = 0
-                break
-            else:
-                status = 1
-                eventToDeleteId = event["id"]
-                break
-        else:
-            status = 2
+    print(titlesList)
 
-    if (status == 1):
-            service.events().delete(calendarId=plCalendarId, eventId=eventToDeleteId).execute()
-            service.events().insert(calendarId=plCalendarId, body=addEvent).execute()
-    if (status == 2):
-            service.events().insert(calendarId=plCalendarId, body=addEvent).execute()
+    if addEvent["summary"] not in titlesList:
+        service.events().insert(calendarId=plCalendarId, body=addEvent).execute()
 
     return print(status)
 
+def readDictionaryIntoList(dict):
 
+    gcEventList = []
 
-
+    for k in dict:
+        for assignment in dict[k]:
+            if assignment['most_relevant_date'] is not None:
+                title = assignment['course_name'] + ' - ' + assignment['assignment_name'] + "  (" + assignment['most_relevant_percentage'] + ")"
+                link = assignment['link']
+                time = assignment['most_relevant_date'].isoformat()
+                gcEventList.append(createEvent(title, '.', link, time))
+    return gcEventList
