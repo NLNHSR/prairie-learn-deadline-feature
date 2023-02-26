@@ -1,5 +1,7 @@
 # prairie-learn-deadline-feature
-Inspiration
+
+##Inspiration
+
 Every time we log in to PrairieLearn, all we really care about is which assignments are upcoming. However, it can be time-consuming and tedious to manually go through every course instance to find all the upcoming assignments, which has resulted in us missing deadlines. To solve this problem, we wanted to create a tool that would easily display upcoming assignments and add them to our Google Calendar, so that we could get notifications.
 
 ## What it Does
