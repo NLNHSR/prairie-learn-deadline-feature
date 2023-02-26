@@ -136,7 +136,8 @@ for key in courses:
 parsed_courses = []
 for key in courses:
     for assignment in sorted_assignments[key][0:4]:
-        parsed_courses.append(assignment)
+        if not (assignment['most_relevant_percentage'] is None and assignment['most_relevant_percentage'] == '0%'):
+            parsed_courses.append(assignment)
 # print(sorted_assignments["CS 233"])
 print(parsed_courses)
 def get_objects_by_date(data):
