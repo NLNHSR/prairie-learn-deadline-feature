@@ -46,6 +46,8 @@ def course_deadlines(parsed_html, course_name):
             continue  # Skip assessments without links
         link = link_tag['href']
         name = assessment.find('a').text.strip()
+        all_links = assessment.find_all('a')
+        name = all_links[0].text.strip() + ' - ' + all_links[1].text.strip()
 
         # extract deadline table
         try:
@@ -105,7 +107,8 @@ for key in courses:
 parsed_courses = []
 for key in courses:
     for assignment in sorted_assignments[key][0:4]:
-        parsed_courses.append(assignment)
+        if not (assignment['most_relevant_percentage'] is None and assignment['most_relevant_percentage'] == '0%'):
+            parsed_courses.append(assignment)
 # print(sorted_assignments["CS 233"])
 print(parsed_courses)
 def get_objects_by_date(data):
