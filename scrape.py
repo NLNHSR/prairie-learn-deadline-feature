@@ -1,3 +1,5 @@
+from datetime import datetime
+import pytz
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 import time
@@ -12,21 +14,83 @@ time.sleep(2)
 get_url = driver.current_url
 driver.get(get_url)
 time.sleep(2)
-driver.find_element("name", "loginfmt").send_keys("PL_EMAIL")
+driver.find_element("name", "loginfmt").send_keys("dodich3@illinois.edu")
 time.sleep(2)
 driver.find_element("id", "idSIButton9").click()
 time.sleep(2)
-driver.find_element("name", "passwd").send_keys("PL_PASSWORD")
+driver.find_element("name", "passwd").send_keys("xBnb4mti?4mti")
 driver.find_element("id", "idSIButton9").click()
 time.sleep(2)
-driver.get("https://us.prairielearn.com/pl/course_instance/130110/assessments")
-content = driver.find_elements(By.CLASS_NAME, "content")
 html = driver.page_source
 parsed_html = BeautifulSoup(html, 'html.parser')
-table = parsed_html.find("table")
-rows = table.find_all("tr")
-for row in rows:
-    cells = row.find_all("td")
-    for cell in cells:
-        print(cell.text.strip())
-driver.quit()
+tds = parsed_html.find_all('td')
+links = []
+for td in tds:
+    link = td.find('a')
+    print(link)
+    if link:
+        text = link.text.strip()
+        href = link.get('href')
+        links.append((href, text.split(":")))
+
+
+
+
+# Print the list of hrefs
+print(links)
+
+def course_deadlines(parsed_html, course_name):
+    html = driver.page_source
+    parsed_html = BeautifulSoup(html, 'html.parser')
+    assessments = parsed_html.find_all('tr')
+    for assessment in assessments:
+        # extract link and name
+        link_tag = assessment.find('a', href=True)
+        if link_tag is None:
+            continue  # Skip assessments without links
+        link = link_tag['href']
+        name = assessment.find('a').text.strip()
+
+        # extract deadline table
+        try:
+            deadline_table = assessment.find('a', {'data-content': True})['data-content']
+            deadline_table = BeautifulSoup(deadline_table, 'html.parser')
+        except:
+            continue
+
+        # find most relevant deadline date
+        deadline_rows = deadline_table.find_all('tr')[1:]
+        most_relevant = None
+        for row in deadline_rows:
+            percentage = row.find_all('td')[0].text.strip()
+            deadline_str = row.find_all('td')[2].text.strip()
+            if deadline_str == '—' or deadline_str == '':
+                continue
+            if 'CST' in deadline_str:
+                deadline_str = deadline_str.replace(' (CST)', '')
+            elif 'CDT' in deadline_str:
+                deadline_str = deadline_str.replace(' (CDT)', '')
+            deadline = datetime.strptime(deadline_str[:-3], '%Y-%m-%d %H:%M:%S')
+            #
+            if deadline >= datetime.now():
+                # check if this deadline is the most relevant so far
+                if most_relevant is None or deadline < most_relevant:
+                    most_relevant = deadline
+                    most_relevant_percentage = percentage
+
+        if most_relevant == "None" or most_relevant is None:
+            most_relevant_percentage = "0%"
+        print(f'{course_name}: {name}: {link} (deadline: {most_relevant}), percentage: {most_relevant_percentage}')
+for link in links:
+    url_to_get = "https://us.prairielearn.com" + link[0]
+    driver.get(url_to_get)
+    content = driver.find_elements(By.CLASS_NAME, "content")
+    course_deadlines(parsed_html, link[1][0])
+
+'''
+#links[][] look like this:
+[('/pl/course_instance/130633', ['CS 225', ' Data Structures and Algorithms, Spring 2023']), ('/pl/course_instance/130040', ['CS 361', ' P
+robability and Statistics for Computer Science, Spring 2023']), ('/pl/course_instance/130110', ['MATH 257', ' Linear Algebra with Computat
+ional Applications, MATH 257 - Spring 2023']), ('/pl/course_instance/130303', ['CS 233', ' Computer Architecture, Spring 2023'])]
+
+'''
