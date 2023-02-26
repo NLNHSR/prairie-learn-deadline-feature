@@ -3,6 +3,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 import time
 from bs4 import BeautifulSoup
+import datetime as dt
 
 driver = webdriver.Chrome()
 driver.get("https://us.prairielearn.com/pl/login")
@@ -22,7 +23,7 @@ tds = parsed_html.find_all('td')
 links = []
 for td in tds:
     link = td.find('a')
-    print(link)
+    #print(link)
     if link:
         text = link.text.strip()
         href = link.get('href')
@@ -42,7 +43,8 @@ def course_deadlines(parsed_html, course_name):
         if link_tag is None:
             continue  # Skip assessments without links
         link = link_tag['href']
-        name = assessment.find('a').text.strip()
+        all_links = assessment.find_all('a')
+        name = all_links[0].text.strip() + ' - ' + all_links[1].text.strip()
 
         # extract deadline table
         try:
@@ -83,6 +85,11 @@ def course_deadlines(parsed_html, course_name):
         assignments.append(assignment)
         #print(f'{course_name}: {name}: {link} (deadline: {most_relevant}), percentage: {most_relevant_percentage}')
     courses[course_name] = assignments
+
+sorted_assignments = []
+for key in courses:
+    sorted_assignments += sorted(courses[key], key=lambda x: x['most_relevant_date'])
+print(sorted_assignments)
 for link in links:
     url_to_get = "https://us.prairielearn.com" + link[0]
     driver.get(url_to_get)
@@ -110,3 +117,76 @@ ional Applications, MATH 257 - Spring 2023']), ('/pl/course_instance/130303', ['
 # driver.execute_script(script)
 # driver.execute_script(script)
 time.sleep(30)
+parsed_courses = []
+def get_objects_by_date(data):
+    today = dt.datetime.today().date()
+    objects_with_same_date = []
+    objects_with_closest_dates = []
+
+    for course_name, assignments in data.items():
+        for assignment in assignments:
+            if assignment['most_relevant_date'] is not None and assignment['most_relevant_percentage'] != "0%":
+                assignment_date = assignment['most_relevant_date'].date()
+                diff = abs(today - assignment_date)
+
+                if diff == dt.timedelta(days=0):
+                    objects_with_same_date.append(assignment)
+                else:
+                    objects_with_closest_dates.append((assignment, diff))
+
+    objects_with_closest_dates.sort(key=lambda x: x[1])
+    closest_objects = [x[0] for x in objects_with_closest_dates][:4]
+    # print(objects_with_closest_dates)
+    num_due_today = len(objects_with_same_date)
+    if (num_due_today < 5):
+        objects_with_same_date += closest_objects
+        return objects_with_same_date
+    else:
+        print("it is returning closest_objecets")
+        return closest_objects
+
+parsed_courses = get_objects_by_date(courses)
+
+def make_script(course_name, index):
+    script_text = """
+                    var table = document.querySelector('.table.table-sm.table-hover.table-striped tbody');
+                    var rows = table.querySelectorAll('tr');
+                """
+    assignment_list = """"""
+    for assignment in parsed_courses:
+        if (assignment['course_name'] == course_name):
+            # print(assignment)
+            assignment_list += f"<li>{assignment['assignment_name']}</li>"
+    script_text += f"""
+                            var row = table.insertRow({index});
+                            var cell = row.insertCell(0);
+                            cell.textContent = '{course_name}';
+                            var ul = document.createElement('ul');
+                            ul.innerHTML = '{assignment_list}';
+                            cell.appendChild(ul);
+                            row.classList.add('new-row');
+                        """
+    index += 1
+    script_text2 = """
+                    var style = document.createElement('style');
+                    style.innerHTML = '.new-row td { padding-left: 20px; font-size: 75%; }';
+                    document.head.appendChild(style);
+                """
+    driver.execute_script(script_text)
+    driver.execute_script(script_text2)
+
+
+driver.get("https://us.prairielearn.com")
+html = driver.page_source
+parsed_html = BeautifulSoup(html, 'html.parser')
+tds = parsed_html.find_all('td')
+index = -1
+for td in tds:
+    link = td.find('a')
+    if link:
+        index = index + 2
+        text = link.text.strip()
+        text = (text.split(":"))[0]
+        make_script(text, index)
+
+time.sleep(60)
