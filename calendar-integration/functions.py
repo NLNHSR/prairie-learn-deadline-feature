@@ -55,9 +55,10 @@ def createCalendar():
             'timeZone': 'America/Chicago'
         }
         service.calendars().insert(body=calendar).execute()
+
+        calendarList = service.calendarList().list().execute()["items"]
         for calendar in calendarList:
             if calendar["summary"] == "PrairieLearn Deadlines":
                 plCalendarId = calendar["id"]
 
     return plCalendarId
-
