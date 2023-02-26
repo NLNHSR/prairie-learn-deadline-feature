@@ -25,7 +25,11 @@ plCalendarId = createCalendar()
 
 # Call the Calendar API to create the event
 list = readDictionaryIntoList(courses)
+eventsInCalendar = service.events().list(calendarId=plCalendarId).execute()["items"]
+titlesList = {}
+for event in eventsInCalendar:
+    titlesList[event["summary"]] = 1
 
 for item in list:
-    insertEvent(item, plCalendarId)
+    insertEvent(item, plCalendarId, titlesList)
     print(f'Event created: {item.get("htmlLink")}')

@@ -52,20 +52,16 @@ def createCalendar():
 
     return plCalendarId
 
-def insertEvent(addEvent, plCalendarId):
+def insertEvent(addEvent, plCalendarId, titlesList):
 
     creds = Credentials.from_authorized_user_file('token.json', ['https://www.googleapis.com/auth/calendar'])
     service = build('calendar', 'v3', credentials=creds)
     status = 1
-    titlesList = []
-
-    eventsInCalendar = service.events().list(calendarId=plCalendarId).execute()["items"]
-    for event in eventsInCalendar:
-        titlesList.append(event["summary"])
 
     print(titlesList)
 
-    if addEvent["summary"] not in titlesList:
+    if titlesList.get(addEvent["summary"]) == None:
+        titlesList[addEvent["summary"]] = 1
         service.events().insert(calendarId=plCalendarId, body=addEvent).execute()
 
     return print(status)
