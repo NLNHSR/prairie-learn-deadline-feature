@@ -86,6 +86,11 @@ def course_deadlines(parsed_html, course_name):
         assignments.append(assignment)
         #print(f'{course_name}: {name}: {link} (deadline: {most_relevant}), percentage: {most_relevant_percentage}')
     courses[course_name] = assignments
+
+sorted_assignments = []
+for key in courses:
+    sorted_assignments += sorted(courses[key], key=lambda x: x['most_relevant_date'])
+print(sorted_assignments)
 for link in links:
     url_to_get = "https://us.prairielearn.com" + link[0]
     driver.get(url_to_get)
@@ -111,14 +116,13 @@ def get_objects_by_date(data):
 
     objects_with_closest_dates.sort(key=lambda x: x[1])
     closest_objects = [x[0] for x in objects_with_closest_dates][:4]
-
+    # print(objects_with_closest_dates)
     num_due_today = len(objects_with_same_date)
-    if (num_due_today < 4):
-        return(objects_with_same_date.append(closest_objects[:(4-num_due_today)]))
-
-    if objects_with_same_date:
+    if (num_due_today < 5):
+        objects_with_same_date += closest_objects
         return objects_with_same_date
     else:
+        print("it is returning closest_objecets")
         return closest_objects
 
 parsed_courses = get_objects_by_date(courses)
@@ -131,7 +135,7 @@ def make_script(course_name, index):
     assignment_list = """"""
     for assignment in parsed_courses:
         if (assignment['course_name'] == course_name):
-            print(assignment)
+            # print(assignment)
             assignment_list += f"<li>{assignment['assignment_name']}</li>"
     script_text += f"""
                             var row = table.insertRow({index});
