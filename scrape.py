@@ -1,7 +1,10 @@
 from datetime import datetime
+import datetime as dt
+import pytz
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 import time
+import requests
 from bs4 import BeautifulSoup
 import datetime as dt
 
@@ -59,7 +62,7 @@ def course_deadlines(parsed_html, course_name):
         for row in deadline_rows:
             percentage = row.find_all('td')[0].text.strip()
             deadline_str = row.find_all('td')[2].text.strip()
-            if deadline_str == '—' or deadline_str == '':
+            if deadline_str == '—' or deadline_str == '' or deadline_str is None:
                 continue
             if 'CST' in deadline_str:
                 deadline_str = deadline_str.replace(' (CST)', '')
@@ -86,10 +89,14 @@ def course_deadlines(parsed_html, course_name):
         #print(f'{course_name}: {name}: {link} (deadline: {most_relevant}), percentage: {most_relevant_percentage}')
     courses[course_name] = assignments
 
+
 sorted_assignments = []
 for key in courses:
     sorted_assignments += sorted(courses[key], key=lambda x: x['most_relevant_date'])
 print(sorted_assignments)
+
+
+
 for link in links:
     url_to_get = "https://us.prairielearn.com" + link[0]
     driver.get(url_to_get)
@@ -118,6 +125,20 @@ ional Applications, MATH 257 - Spring 2023']), ('/pl/course_instance/130303', ['
 # driver.execute_script(script)
 time.sleep(30)
 parsed_courses = []
+
+sorted_assignments = {}
+parsed_courses = []
+for key in courses:
+    filtered_courses = [c for c in courses[key] if c['most_relevant_date'] is not None]
+    # Sort the filtered list of dictionaries by the 'most_relevant_date' key
+    sorted_assignments[key] = sorted(filtered_courses, key=lambda x: x['most_relevant_date'])
+    # parsed_courses += sorted_assignments[0:4]
+parsed_courses = []
+for key in courses:
+    for assignment in sorted_assignments[key][0:4]:
+        parsed_courses.append(assignment)
+# print(sorted_assignments["CS 233"])
+print(parsed_courses)
 def get_objects_by_date(data):
     today = dt.datetime.today().date()
     objects_with_same_date = []
@@ -172,6 +193,47 @@ def make_script(course_name, index):
                     style.innerHTML = '.new-row td { padding-left: 20px; font-size: 75%; }';
                     document.head.appendChild(style);
                 """
+
+# parsed_courses = get_objects_by_date(courses)
+
+def make_script(course_name, index):
+    script_text = """
+        var table = document.querySelector('.table.table-sm.table-hover.table-striped tbody');
+        var rows = table.querySelectorAll('tr');
+    """
+
+    assignment_list = ""
+
+    for assignment in parsed_courses:
+        if assignment['course_name'] == course_name:
+            # Create a clickable link with the assignment name as the link text and the link as the URL
+            link = "<a href={}>{}</a>".format(assignment['link'], assignment['assignment_name'])
+
+            # Create a list of variables to include in the bullet point
+            formatted_date = assignment['most_relevant_date'].strftime("%B %d, %Y")
+            variables = [link, formatted_date]
+
+            # Create a bullet point with the variables included
+            bullet_point = "<li>{}</li>".format(" - ".join(str(v) for v in variables))
+
+            # Add the bullet point to the assignment list
+            assignment_list += bullet_point
+
+    script_text += """
+        var row = table.insertRow({});
+        var cell = row.insertCell(0);
+        var ul = document.createElement('ul');
+        ul.innerHTML = '{}';
+        cell.appendChild(ul);
+        row.classList.add('new-row');
+    """.format(index, assignment_list)
+
+    script_text2 = """
+        var style = document.createElement('style');
+        style.innerHTML = '.new-row td { padding-left: 20px; font-size: 75%; }';
+        document.head.appendChild(style);
+    """
+
     driver.execute_script(script_text)
     driver.execute_script(script_text2)
 
