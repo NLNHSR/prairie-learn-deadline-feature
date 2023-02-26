@@ -3,6 +3,7 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from functions import createEvent
 from functions import createCalendar
+from functions import insertEvent
 from authenticator import authenticate
 import os
 
@@ -24,5 +25,5 @@ print((datetime.utcnow() + timedelta(hours=2)).isoformat())
 plCalendarId = createCalendar()
 
 # Call the Calendar API to create the event
-event = service.events().insert(calendarId=plCalendarId, body=event).execute()
+insertEvent(event, plCalendarId)
 print(f'Event created: {event.get("htmlLink")}')

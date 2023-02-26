@@ -20,17 +20,6 @@ def createEvent(assignment_title, assignment_description, assignment_link, deadl
 
     return event
 
-def insertEvent(event):
-
-    # Set up the Google Calendar API service object
-    creds = Credentials.from_authorized_user_file('token.json', ['https://www.googleapis.com/auth/calendar'])
-    service = build('calendar', 'v3', credentials=creds)
-    print("insertEvent function is running...")
-
-    # Call the Calendar API to create the event
-    service.events().insert(calendarId='plcalendar', body=event).execute()
-    print('Event created: {event.get("htmlLink")}')
-
 def createCalendar():
 
     creds = Credentials.from_authorized_user_file('token.json', ['https://www.googleapis.com/auth/calendar'])
@@ -62,3 +51,36 @@ def createCalendar():
                 plCalendarId = calendar["id"]
 
     return plCalendarId
+
+def insertEvent(addEvent, plCalendarId):
+
+    creds = Credentials.from_authorized_user_file('token.json', ['https://www.googleapis.com/auth/calendar'])
+    service = build('calendar', 'v3', credentials=creds)
+    status = 2
+
+    eventList = service.events().list(calendarId=plCalendarId).execute()["items"]
+    eventToDeleteId = ""
+
+    for event in eventList:
+        if (event["summary"] == addEvent["summary"]):
+            if (event["end"] == addEvent["end"]):
+                status = 0
+                break
+            else:
+                status = 1
+                eventToDeleteId = event["id"]
+                break
+        else:
+            status = 2
+
+    if (status == 1):
+            service.events().delete(calendarId=plCalendarId, eventId=eventToDeleteId).execute()
+            service.events().insert(calendarId=plCalendarId, body=addEvent).execute()
+    if (status == 2):
+            service.events().insert(calendarId=plCalendarId, body=addEvent).execute()
+
+    return print(status)
+
+
+
+
