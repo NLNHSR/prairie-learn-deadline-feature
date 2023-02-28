@@ -16,7 +16,7 @@ driver.find_element("name", "loginfmt").send_keys("dodich3@illinois.edu")
 time.sleep(1)
 driver.find_element("id", "idSIButton9").click()
 time.sleep(1)
-driver.find_element("name", "passwd").send_keys("xBnb4mti?4mti")
+driver.find_element("name", "passwd").send_keys("xBnb4mti#4mti")
 driver.find_element("id", "idSIButton9").click()
 time.sleep(1)
 html = driver.page_source
@@ -107,10 +107,10 @@ for key in courses:
 parsed_courses = []
 for key in courses:
     for assignment in sorted_assignments[key][0:4]:
-        if not (assignment['most_relevant_percentage'] is None and assignment['most_relevant_percentage'] == '0%'):
+        if not (assignment['most_relevant_percentage'] is None and assignment['most_relevant_percentage'] == '0%') and assignment['most_relevant_date'].date() <= (dt.date.today() + dt.timedelta(days=10)):
             parsed_courses.append(assignment)
-# print(sorted_assignments["CS 233"])
-print(parsed_courses)
+
+
 def get_objects_by_date(data):
     today = dt.datetime.today().date()
     objects_with_same_date = []
@@ -129,9 +129,12 @@ def get_objects_by_date(data):
 
     objects_with_closest_dates.sort(key=lambda x: x[1])
     closest_objects = [x[0] for x in objects_with_closest_dates][:4]
+    print(closest_objects, objects_with_closest_dates)
+    print("HELLLLLLo",objects_with_same_date)
     # print(objects_with_closest_dates)
     num_due_today = len(objects_with_same_date)
     if (num_due_today < 5):
+
         objects_with_same_date += closest_objects
         return objects_with_same_date
     else:

@@ -32,4 +32,4 @@ for event in eventsInCalendar:
 
 for item in list:
     insertEvent(item, plCalendarId, titlesList)
-    print(f'Event created: {item.get("htmlLink")}')
+    # print(f'Event created: {item.get("htmlLink")}')
